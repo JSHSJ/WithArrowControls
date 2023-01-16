@@ -1,0 +1,36 @@
+<html lang="en">
+  <head>
+    <style>
+      body {
+        padding: 2em;
+      }
+      [data-with-arrowcontrols] {
+        display: grid;
+        gap: 0.5em;
+      }
+
+      *:focus-within {
+        outline: 2px solid mediumvioletred;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-with-arrowcontrols>
+      <input id="test" />
+      <button>Some button</button>
+      <label for="nested">
+        <span>something nested</span>
+        <input id="nested" />
+      </label>
+      <a href="#">Test</a>
+      <div tabindex="0">Test</div>
+      <div tabindex="0">Test</div>
+      <input type="checkbox" />
+      <input type="radio" name="test1" />
+      <input type="radio" name="test1" />
+      <input disabled />
+    </div>
+
+    <script type="module" src="out/index.js"></script>
+  </body>
+</html>
