@@ -1,5 +1,5 @@
 {
-  "exclude": [".*\\spec.ts$", ".*\\.map$"],
+  "exclude": [".*\\.spec.ts$", ".*\\.map$"],
   "jsc": {
     "parser": {
       "syntax": "typescript",

@@ -1,60 +1,143 @@
 export type TConfig = {
   /**
    * If set to true, the arrows will wrap from last to first and vice versa.
+   * @default: true
    */
   wrapControls: boolean;
   /**
    * If set to true, elements that can't be tabbed will be ignored.
+   * @default: true
    */
   ignoreUntabbable: boolean;
+  /**
+   * If set to true, prevent default events. Usually used to give more flexibility, so radio groups dont prevent function.
+   * If you only have a group of radio inputs, set it to false to check them.
+   * @default: true
+   */
+  preventDefault: boolean;
+  /**
+   * Customise the child selector. This is for more advanced usecases, probably.
+   * Will be used inside rootElement.querySelectorAll(yourSelector)
+   * @default: undefined
+   */
+  customSelector?: string;
 };
 
-/**
- * Check if the given element is tabbable.
- */
-export const isTabbable = (element: HTMLElement) => {
-  if (
-    element.tabIndex > 0 ||
-    (element.tabIndex === 0 && element.getAttribute("tabIndex") !== null)
-  ) {
-    return true;
-  }
-  if (element.hasAttribute("disabled")) {
-    return false;
-  }
+export const defaultConfig: TConfig = {
+  wrapControls: true,
+  ignoreUntabbable: true,
+  preventDefault: true,
+  customSelector: undefined,
+};
 
-  switch (element.nodeName) {
-    case "A":
-      return (
-        !!(element as HTMLAnchorElement).href &&
-        (element as HTMLAnchorElement).rel !== "ignore"
-      );
-    case "INPUT":
-      return (
-        (element as HTMLInputElement).type !== "hidden" &&
-        (element as HTMLInputElement).type !== "file"
-      );
-    case "BUTTON":
-    case "SELECT":
-    case "TEXTAREA":
-      return true;
-    default:
-      return false;
+const isRtl =
+  window.getComputedStyle(document.documentElement).direction === "rtl";
+const usedKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+const prevKeys = isRtl
+  ? new Set(["ArrowRight", "ArrowUp"])
+  : new Set(["ArrowLeft", "ArrowUp"]);
+const nextKeys = isRtl
+  ? new Set(["ArrowLeft", "ArrowDown"])
+  : new Set(["ArrowRight", "ArrowDown"]);
+
+const focussableElementSelector =
+  'a[href], button, input, textarea, select, details,[tabindex]:not([tabindex="-1"])';
+
+export const getKeyboardFocusableElements = (
+  root: HTMLElement,
+  selector = focussableElementSelector
+) => {
+  return Array.from(root.querySelectorAll(selector)).filter(
+    (el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden")
+  );
+};
+
+export const activateElement = (element: Element) => {
+  if (typeof (element as HTMLElement).focus === "function") {
+    (element as HTMLElement).focus();
   }
+};
+
+export const registerArrowControls = (root: Element, config: TConfig) => {
+  const children = getKeyboardFocusableElements(
+    root as HTMLElement,
+    config.customSelector
+  );
+
+  // Prevent default tabbing, so tab will jump to the next element outside of this group.
+  let currentIdx = 0;
+  (root as HTMLElement).tabIndex = 0;
+  children.forEach((el) => ((el as HTMLElement).tabIndex = -1));
+
+  const onFocusIn = () => {
+    activateElement(children[currentIdx]);
+  };
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (!root.contains(document.activeElement)) {
+      return;
+    }
+
+    if (usedKeys.has(event.key) && config.preventDefault) {
+      event.preventDefault();
+    }
+
+    if (prevKeys.has(event.key)) {
+      if (currentIdx > 0) {
+        currentIdx--;
+      }
+
+      if (config.wrapControls) {
+        if (currentIdx === 0) {
+          currentIdx = children.length - 1;
+        }
+      }
+      activateElement(children[currentIdx]);
+    }
+
+    if (nextKeys.has(event.key)) {
+      if (currentIdx < children.length - 1) {
+        currentIdx++;
+      }
+
+      if (config.wrapControls) {
+        if (currentIdx === children.length - 1) {
+          currentIdx = 0;
+        }
+      }
+      activateElement(children[currentIdx]);
+    }
+  };
+
+  root.addEventListener("focusin", onFocusIn);
+  root.addEventListener("keydown", onKeyDown);
+
+  const unsubscribe = () => {
+    root.removeEventListener("focusin", onFocusIn);
+    root.removeEventListener("keydown", onKeyDown);
+  };
+
+  return {
+    unsubscribe,
+  };
 };
 
 export const withArrowControls = (
-  rootSelector: string = "[data-with-arrowcontrols]"
+  rootSelector: string = "[data-with-arrowcontrols]",
+  options?: Partial<TConfig>
 ) => {
-  const root = document.querySelector(rootSelector);
-  if (!root) {
+  const config = Object.assign({}, defaultConfig, options);
+
+  const rootElements = Array.from(document.querySelectorAll(rootSelector));
+  if (rootElements.length === 0) {
     throw new Error(
-      `Unable to find root element with selector ${rootSelector}`
+      `Unable to find root elements with selector ${rootSelector}`
     );
   }
 
-  const children = Array.from(root.children);
-  console.log(children);
-};
+  const subscriptions = rootElements.map((el) =>
+    registerArrowControls(el, config)
+  );
 
-withArrowControls();
+  return subscriptions;
+};

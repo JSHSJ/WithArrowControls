@@ -2,12 +2,18 @@
   "name": "@jshsh/with-arrow-controls",
   "version": "0.0.1",
   "description": "Control selectable node with arrows",
-  "main": "index.js",
+   "main": "out/index.mjs",
+  "type": "module",
+  "types": "out/index.d.ts",
+  "files": [
+    "/out"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "checkTypes": "tsc --noEmit",
-    "dev": "npx swc src -w -d out",
-    "build": "npx swc src -d out"
+    "generateTypes": "tsc",
+    "dev": "npx swc src/index/ts -w -o out/index.mjs",
+    "build": "npx swc src/index.ts -o out/index.mjs"
   },
   "author": "",
   "license": "ISC",
