@@ -58,6 +58,35 @@ export const activateElement = (element: Element) => {
   }
 };
 
+const handleIndex = (
+  key: string,
+  currentIdx: number,
+  childrenLength: number,
+  shouldWrap: boolean
+) => {
+  if (prevKeys.has(key)) {
+    if (currentIdx > 0) {
+      return currentIdx - 1;
+    }
+
+    if (shouldWrap && currentIdx === 0) {
+      return childrenLength - 1;
+    }
+  }
+
+  if (nextKeys.has(key)) {
+    if (currentIdx < childrenLength - 1) {
+      return currentIdx + 1;
+    }
+
+    if (shouldWrap && currentIdx === childrenLength - 1) {
+      return 0;
+    }
+  }
+
+  return currentIdx;
+};
+
 export const registerArrowControls = (root: Element, config: TConfig) => {
   const children = getKeyboardFocusableElements(
     root as HTMLElement,
@@ -82,31 +111,13 @@ export const registerArrowControls = (root: Element, config: TConfig) => {
       event.preventDefault();
     }
 
-    if (prevKeys.has(event.key)) {
-      if (currentIdx > 0) {
-        currentIdx--;
-      }
-
-      if (config.wrapControls) {
-        if (currentIdx === 0) {
-          currentIdx = children.length - 1;
-        }
-      }
-      activateElement(children[currentIdx]);
-    }
-
-    if (nextKeys.has(event.key)) {
-      if (currentIdx < children.length - 1) {
-        currentIdx++;
-      }
-
-      if (config.wrapControls) {
-        if (currentIdx === children.length - 1) {
-          currentIdx = 0;
-        }
-      }
-      activateElement(children[currentIdx]);
-    }
+    currentIdx = handleIndex(
+      event.key,
+      currentIdx,
+      children.length,
+      config.wrapControls
+    );
+    activateElement(children[currentIdx]);
   };
 
   root.addEventListener("focusin", onFocusIn);
