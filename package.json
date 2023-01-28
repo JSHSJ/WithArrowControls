@@ -2,7 +2,7 @@
   "name": "@jshsh/with-arrow-controls",
   "version": "0.0.1",
   "description": "Control selectable node with arrows",
-   "main": "out/index.mjs",
+  "main": "out/index.mjs",
   "type": "module",
   "types": "out/index.d.ts",
   "files": [
@@ -15,8 +15,8 @@
     "dev": "npx swc src/index/ts -w -o out/index.mjs",
     "build": "npx swc src/index.ts -o out/index.mjs"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Joshua Stübner <kontakt@joshuastuebner.com>",
+  "license": "MIT",
   "devDependencies": {
     "@swc/cli": "^0.1.59",
     "@swc/core": "^1.3.26",
